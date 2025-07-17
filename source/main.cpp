@@ -4,16 +4,23 @@
 #include "scratch/render.hpp"
 #include "scratch/input.hpp"
 #include "scratch/unzip.hpp"
+#ifdef __3DS__
+#include "3ds/audio.hpp"
+#else
+#include "sdl/audio.hpp"
+#endif
 
 // arm-none-eabi-addr2line -e Scratch.elf xxx
 // ^ for debug purposes
 
 static void exitApp(){
+	Audio::cleanup();
 	Render::deInit();
 }
 
 static void initApp(){
 	Render::Init();
+	Audio::init();
 }
 
 int main(int argc, char **argv)
@@ -32,9 +39,8 @@ int main(int argc, char **argv)
 		return 0;
 	}
 
-	BlockExecutor::runAllBlocksByOpcode(Block::EVENT_WHENFLAGCLICKED);
 	BlockExecutor::timer = std::chrono::high_resolution_clock::now();
-
+	bool flagClickedExecuted = false;
 
 	while (Render::appShouldRun())
 	{
@@ -46,7 +52,14 @@ int main(int argc, char **argv)
 
 			Input::getInput();
 			BlockExecutor::runRepeatBlocks();
+			Audio::update();
 			Render::renderSprites();
+			
+			// Execute flag clicked blocks after first frame is rendered
+			if (!flagClickedExecuted) {
+				BlockExecutor::runAllBlocksByOpcode(Block::EVENT_WHENFLAGCLICKED);
+				flagClickedExecuted = true;
+			}
 
 			frameEndTime = std::chrono::high_resolution_clock::now();
 			auto frameDuration = frameEndTime - frameStartTime;

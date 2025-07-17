@@ -82,6 +82,15 @@ struct Block {
         LOOKS_GO_FORWARD_BACKWARD_LAYERS,
         LOOKS_GO_TO_FRONT_BACK,
         SOUND_VOLUME,
+        SOUND_PLAYUNTILDONE,
+        SOUND_SOUNDS_MENU,
+        SOUND_PLAY,
+        SOUND_STOPALLSOUNDS,
+        SOUND_CHANGEEFFECTBY,
+        SOUND_SETEFFECTTO,
+        SOUND_CLEAREFFECTS,
+        SOUND_CHANGEVOLUMETOBY,
+        SOUND_SETVOLUMETO,
         SENSING_TIMER,
         SENSING_RESETTIMER,
         CONTROL_WAIT_UNTIL,
@@ -196,6 +205,15 @@ struct Block {
         if(opCodeString == "looks_goforwardbackwardlayers")return LOOKS_GO_FORWARD_BACKWARD_LAYERS;
         if(opCodeString == "looks_gotofrontback")return LOOKS_GO_TO_FRONT_BACK;
         if(opCodeString == "sound_volume")return SOUND_VOLUME;
+        if(opCodeString == "sound_playuntildone")return SOUND_PLAYUNTILDONE;
+        if(opCodeString == "sound_sounds_menu")return SOUND_SOUNDS_MENU;
+        if(opCodeString == "sound_play")return SOUND_PLAY;
+        if(opCodeString == "sound_stopallsounds")return SOUND_STOPALLSOUNDS;
+        if(opCodeString == "sound_changeeffectby")return SOUND_CHANGEEFFECTBY;
+        if(opCodeString == "sound_seteffectto")return SOUND_SETEFFECTTO;
+        if(opCodeString == "sound_cleareffects")return SOUND_CLEAREFFECTS;
+        if(opCodeString == "sound_changevolumetoby")return SOUND_CHANGEVOLUMETOBY;
+        if(opCodeString == "sound_setvolumeto")return SOUND_SETVOLUMETO;
         if(opCodeString == "sensing_timer")return SENSING_TIMER;
         if(opCodeString == "sensing_resettimer")return SENSING_RESETTIMER;
         if(opCodeString == "control_wait_until")return CONTROL_WAIT_UNTIL;
@@ -256,6 +274,7 @@ struct Block {
         if(opCodeString == "operator_or")return OPERATOR_OR;
         if(opCodeString == "operator_not")return OPERATOR_NOT;
         if(opCodeString == "operator_contains")return OPERATOR_CONTAINS;
+        if(opCodeString == "sensing_username")return SENSING_USERNAME;
         std::cerr << "Unknown opcode: " << opCodeString << std::endl;
         return NONE;
 
@@ -284,6 +303,7 @@ struct Block {
     bool customBlockExecuted = false;
     Block* customBlockPtr = nullptr;
     std::vector<std::pair<Block*, Sprite*>> broadcastsRun;
+    std::string soundName; // For tracking sound playback in playUntilDone
 
 private:
     Value getVariableValue(const std::string& variableId, Sprite* sprite) const;

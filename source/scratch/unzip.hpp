@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include "interpret.hpp"
+#include "blocks/sound.hpp"
 
 class Unzip{
 public:
@@ -66,6 +67,7 @@ public:
         mz_free((void*)json_data);
 
         Image::loadImages(&zip);
+        SoundBlocks::loadSounds(&zip);
         mz_zip_reader_end(&zip);
     }
     else {

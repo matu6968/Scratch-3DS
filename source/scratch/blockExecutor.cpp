@@ -57,6 +57,15 @@ void BlockExecutor::registerHandlers(){
     
     // sound
     valueHandlers[Block::SOUND_VOLUME] = SoundBlocks::volume;
+    valueHandlers[Block::SOUND_SOUNDS_MENU] = SoundBlocks::soundsMenu;
+    handlers[Block::SOUND_PLAYUNTILDONE] = SoundBlocks::playUntilDone;
+    handlers[Block::SOUND_PLAY] = SoundBlocks::play;
+    handlers[Block::SOUND_STOPALLSOUNDS] = SoundBlocks::stopAllSounds;
+    handlers[Block::SOUND_CHANGEEFFECTBY] = SoundBlocks::changeEffectBy;
+    handlers[Block::SOUND_SETEFFECTTO] = SoundBlocks::setEffectTo;
+    handlers[Block::SOUND_CLEAREFFECTS] = SoundBlocks::clearEffects;
+    handlers[Block::SOUND_CHANGEVOLUMETOBY] = SoundBlocks::changeVolumeBy;
+    handlers[Block::SOUND_SETVOLUMETO] = SoundBlocks::setVolumeTo;
 
     // events
     handlers[Block::EVENT_WHENFLAGCLICKED] = EventBlocks::flagClicked;

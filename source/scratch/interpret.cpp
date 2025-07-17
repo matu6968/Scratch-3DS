@@ -182,11 +182,9 @@ void loadSprites(const nlohmann::json& json){
 
 
                     if(type == 1){
-                        parsedInput.inputType = ParsedInput::LITERAL;
-                        //std::cout << "doing it! " << inputValue.dump() << std::endl;
-                        parsedInput.literalValue = Value::fromJson(inputValue);
-                        //std::cout << "literal value = " << parsedInput.literalValue.asString();
-
+                        // Type 1 is a block reference
+                        parsedInput.inputType = ParsedInput::BLOCK;
+                        parsedInput.blockId = inputValue.get<std::string>();
                     } else if(type == 3){
                         if(inputValue.is_array()){
                             parsedInput.inputType = ParsedInput::VARIABLE;
@@ -198,6 +196,10 @@ void loadSprites(const nlohmann::json& json){
                     } else if(type == 2){
                         parsedInput.inputType = ParsedInput::BOOLEAN;
                         parsedInput.blockId = inputValue.get<std::string>();
+                    } else if(type == 4 || type == 5 || type == 6 || type == 7 || type == 8 || type == 9 || type == 10){
+                        // These are literal values
+                        parsedInput.inputType = ParsedInput::LITERAL;
+                        parsedInput.literalValue = Value::fromJson(inputValue);
                     }
                     newBlock.parsedInputs[inputName] = parsedInput;
                     //std::cout << "input: " << inputName << ". type = " << parsedInput.inputType << std::endl;
