@@ -2,8 +2,16 @@
 #include <algorithm>
 #include <vector>
 #include <iostream>
+#include <cstdint>
+#include <cstring>
+#include <cstdlib>
+#include <cstdio>
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
+#define NANOSVG_IMPLEMENTATION
+#include "nanosvg.h"
+#define NANOSVGRAST_IMPLEMENTATION
+#include "nanosvgrast.h"
 
 using u32 = uint32_t;
 using u8 = uint8_t;
@@ -49,10 +57,11 @@ for (int i = 0; i < file_count; i++) {
 
     std::string zipFileName = file_stat.m_filename;
 
-    // Check if file is a PNG or JPG
+    // Check if file is a PNG, JPG, or SVG
     if (zipFileName.size() >= 4 && 
         (zipFileName.substr(zipFileName.size() - 4) == ".png" || zipFileName.substr(zipFileName.size() - 4) == ".PNG"\
-        || zipFileName.substr(zipFileName.size() - 4) == ".jpg" || zipFileName.substr(zipFileName.size() - 4) == ".JPG")) {
+        || zipFileName.substr(zipFileName.size() - 4) == ".jpg" || zipFileName.substr(zipFileName.size() - 4) == ".JPG"\
+        || zipFileName.substr(zipFileName.size() - 4) == ".svg" || zipFileName.substr(zipFileName.size() - 4) == ".SVG")) {
 
 
         size_t png_size;
@@ -62,15 +71,53 @@ for (int i = 0; i < file_count; i++) {
             continue;
         }
 
-        // Load image from memory into RGBA
         int width, height, channels;
-        unsigned char* rgba_data = stbi_load_from_memory(
-            (unsigned char*)png_data, png_size,
-            &width, &height, &channels, 4
-        );
+        unsigned char* rgba_data = nullptr;
+        
+        // Check if this is an SVG file
+        if (zipFileName.substr(zipFileName.size() - 4) == ".svg" || zipFileName.substr(zipFileName.size() - 4) == ".SVG") {
+            // Parse SVG from memory
+            NSVGimage* svg_image = nsvgParseFromMemory((const char*)png_data, png_size, "px", 96.0f);
+            if (svg_image) {
+                // Determine size for rasterization (clamp to reasonable sizes)
+                width = (int)svg_image->width;
+                height = (int)svg_image->height;
+                
+                // Clamp dimensions to reasonable sizes for 3DS
+                if (width > 512) width = 512;
+                if (height > 512) height = 512;
+                if (width < 16) width = 16;
+                if (height < 16) height = 16;
+                
+                // Create rasterizer
+                NSVGrasterizer* rast = nsvgCreateRasterizer();
+                if (rast) {
+                    // Allocate RGBA buffer
+                    rgba_data = (unsigned char*)malloc(width * height * 4);
+                    if (rgba_data) {
+                        // Calculate scale to fit the SVG into our desired size
+                        float scale_x = (float)width / svg_image->width;
+                        float scale_y = (float)height / svg_image->height;
+                        float scale = scale_x < scale_y ? scale_x : scale_y;
+                        
+                        // Rasterize SVG to RGBA
+                        nsvgRasterize(rast, svg_image, 0, 0, scale, rgba_data, width, height, width * 4);
+                        printf("Successfully rasterized SVG: %s (%dx%d)\n", zipFileName.c_str(), width, height);
+                    }
+                    nsvgDeleteRasterizer(rast);
+                }
+                nsvgDelete(svg_image);
+            }
+        } else {
+            // Load image from memory into RGBA (PNG/JPG)
+            rgba_data = stbi_load_from_memory(
+                (unsigned char*)png_data, png_size,
+                &width, &height, &channels, 4
+            );
+        }
 
         if (!rgba_data) {
-            printf("Failed to decode PNG: %s\n", zipFileName.c_str());
+            printf("Failed to decode image: %s\n", zipFileName.c_str());
             mz_free(png_data);
             continue;
         }
@@ -95,17 +142,70 @@ void Image::loadImageFromFile(std::string filePath){
   if (it != imageRBGAs.end()) return;
     
   int width,height,channels;
-  FILE* file = fopen(("romfs:/project/"+filePath + ".png").c_str(), "rb");
-  if (!file) {
-    file = fopen(("romfs:/project/"+filePath + ".jpg").c_str(), "rb");
-    if (!file) {
-      std::cerr << "Invalid image file name " << filePath << std::endl;
-      return;
+  unsigned char* rgba_data = nullptr;
+  
+  // Try SVG first
+  FILE* file = fopen(("romfs:/project/"+filePath + ".svg").c_str(), "rb");
+  if (file) {
+    // Load SVG file
+    fseek(file, 0, SEEK_END);
+    size_t size = ftell(file);
+    fseek(file, 0, SEEK_SET);
+    
+    char* svg_data = (char*)malloc(size + 1);
+    if (svg_data) {
+      fread(svg_data, 1, size, file);
+      svg_data[size] = '\0';
+      
+      // Parse SVG
+      NSVGimage* svg_image = nsvgParse(svg_data, "px", 96.0f);
+      if (svg_image) {
+        // Determine size for rasterization
+        width = (int)svg_image->width;
+        height = (int)svg_image->height;
+        
+        // Clamp dimensions to reasonable sizes for 3DS
+        if (width > 512) width = 512;
+        if (height > 512) height = 512;
+        if (width < 16) width = 16;
+        if (height < 16) height = 16;
+        
+        // Create rasterizer
+        NSVGrasterizer* rast = nsvgCreateRasterizer();
+        if (rast) {
+          // Allocate RGBA buffer
+          rgba_data = (unsigned char*)malloc(width * height * 4);
+          if (rgba_data) {
+            // Calculate scale to fit the SVG into our desired size
+            float scale_x = (float)width / svg_image->width;
+            float scale_y = (float)height / svg_image->height;
+            float scale = scale_x < scale_y ? scale_x : scale_y;
+            
+            // Rasterize SVG to RGBA
+            nsvgRasterize(rast, svg_image, 0, 0, scale, rgba_data, width, height, width * 4);
+            printf("Successfully rasterized SVG file: %s (%dx%d)\n", filePath.c_str(), width, height);
+          }
+          nsvgDeleteRasterizer(rast);
+        }
+        nsvgDelete(svg_image);
+      }
+      free(svg_data);
     }
-  }
+    fclose(file);
+  } else {
+    // Try PNG
+    file = fopen(("romfs:/project/"+filePath + ".png").c_str(), "rb");
+    if (!file) {
+      file = fopen(("romfs:/project/"+filePath + ".jpg").c_str(), "rb");
+      if (!file) {
+        std::cerr << "Invalid image file name " << filePath << std::endl;
+        return;
+      }
+    }
 
-  unsigned char* rgba_data = stbi_load_from_file(file, &width, &height, &channels, 4);
-  fclose(file);
+    rgba_data = stbi_load_from_file(file, &width, &height, &channels, 4);
+    fclose(file);
+  }
 
   if (!rgba_data) {
     std::cerr << "Failed to decode image: " << filePath << std::endl;

@@ -15,7 +15,7 @@ To use the mouse you must enter mouse mode by holding L. use the D-pad to move t
 ## Features
 
 - **Sound Support**: WAV audio playback with volume control and sound effects
-- **Sprite Rendering**: Support for PNG and JPG images
+- **Sprite Rendering**: Support for PNG, JPG, and SVG images with automatic vector-to-bitmap conversion
 - **Input Handling**: Keyboard, mouse, and touch input
 - **Control Blocks**: Loops, conditionals, and event handling
 - **Variables and Lists**: Data storage and manipulation
@@ -27,8 +27,6 @@ As this is in a very W.I.P state, you will encounter many bugs, crashes, and thi
 
 **List of known limitations:**
 - Performance on old 3DS starts to tank with a lot of blocks running.
-- There is no vector/svg sprite rendering. Images will only render if converted to bitmap beforehand, otherwise the sprite will show as a black square.
-- Images will only work if it's in .png or .jpg format.
 - If you have a bunch of large images, some may not load.
 - Images cannot be over 1024x1024 in resolution.
 - Extensions (eg: pen and music extensions) are not yet supported.
