@@ -42,7 +42,7 @@ CFLAGS	:=	-g -Wall -O2 -mword-relocations \
 			-ffunction-sections \
 			$(ARCH)
 
-CFLAGS	+=	$(INCLUDE) -D__3DS__  -g -Wall -O0 -mword-relocations -fomit-frame-pointer -ffast-math $(ARCH)
+CFLAGS	+=	$(INCLUDE) -D__3DS__ -fomit-frame-pointer $(ARCH)
 
 CXXFLAGS	:= $(CFLAGS) -fno-rtti -Wno-psabi -std=c++17 -fexceptions
 

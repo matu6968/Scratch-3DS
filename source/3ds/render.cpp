@@ -69,7 +69,11 @@ void renderImage(C2D_Image *image, Sprite* currentSprite, std::string costumeId,
                 C2D_Image newImage = get_C2D_Image(&rgba);
                 imageC2Ds[costumeId].image = newImage;
 
-                return; // hacky solution to fix crashing, causes flickering, TODO fix that 😁
+                if(currentSprite->lastCostumeId == "") return;
+
+                costumeId = currentSprite->lastCostumeId;
+
+                //return; // hacky solution to fix crashing, causes flickering, TODO fix that 😁
                 }
                 imageC2Ds[costumeId].freeTimer = 120;
                 break;
@@ -164,6 +168,8 @@ if (!legacyDrawing) {
     // Draw mouse pointer
     if(Input::mousePointer.isMoving)
     C2D_DrawRectSolid(Input::mousePointer.x + (screenWidth / 2), (Input::mousePointer.y * -1) + (SCREEN_HEIGHT * heightMultiplier) + screenOffset, 1, 5, 5, clrGreen);
+
+    currentSprite->lastCostumeId = costumeId;
 }
 
 void Render::renderSprites(){
@@ -231,6 +237,7 @@ for(Sprite* currentSprite : spritesByLayer) {
 
     C2D_Flush();
     C3D_FrameEnd(0);
+    gspWaitForVBlank();
     Image::FlushImages();
     endTime = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::milli> duration = endTime - startTime;
@@ -255,7 +262,7 @@ void LoadingScreen::renderLoadingScreen(){
         C2D_DrawRectSolid(square.x,square.y,1,square.size,square.size,C2D_Color32(255,255,255,75));
     }
 
-    C2D_Flush();
+    //C2D_Flush();
     C3D_FrameEnd(0);
 }
 

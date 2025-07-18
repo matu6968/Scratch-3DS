@@ -230,7 +230,19 @@ void loadSprites(const nlohmann::json& json){
 
                 std::string rawArgumentDefaults = data["mutation"]["argumentdefaults"];
                 nlohmann::json parsedAD = nlohmann::json::parse(rawArgumentDefaults);
-                newCustomBlock.argumentDefaults = parsedAD.get<std::vector<std::string>>();
+                //newCustomBlock.argumentDefaults = parsedAD.get<std::vector<std::string>>();
+
+                for (const auto& item : parsedAD) {
+                    if (item.is_string()) {
+                        newCustomBlock.argumentDefaults.push_back(item.get<std::string>());
+                    } else if (item.is_number_integer()) {
+                        newCustomBlock.argumentDefaults.push_back(std::to_string(item.get<int>()));
+                    } else if (item.is_number_float()) {
+                        newCustomBlock.argumentDefaults.push_back(std::to_string(item.get<double>()));
+                    } else {
+                        newCustomBlock.argumentDefaults.push_back(item.dump());
+                    }
+                }
 
                 std::string rawArgumentIds = data["mutation"]["argumentids"];
                 nlohmann::json parsedAID = nlohmann::json::parse(rawArgumentIds);

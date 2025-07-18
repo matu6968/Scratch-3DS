@@ -19,6 +19,15 @@ using u8 = uint8_t;
 std::unordered_map<std::string, ImageData> imageC2Ds;
 std::vector<Image::ImageRGBA> Image::imageRBGAs;
 
+struct MemoryStats{
+  size_t totalRamUsage = 0;
+  size_t totalVRamUsage = 0;
+  size_t imageCount = 0;
+  size_t c2dImageCount = 0;
+};
+
+static MemoryStats memStats;
+
 
 const u32 next_pow2(u32 n) {
     n--;
@@ -127,8 +136,12 @@ for (int i = 0; i < file_count; i++) {
         newRGBA.width = width;
         newRGBA.height = height;
         newRGBA.data = rgba_data;
-        Image::imageRBGAs.push_back(newRGBA);
 
+        size_t imageSize = width * height * 4;
+        memStats.totalRamUsage += imageSize;
+        memStats.imageCount++;
+
+        Image::imageRBGAs.push_back(newRGBA);
         mz_free(png_data);
     }
 }
@@ -219,6 +232,11 @@ void Image::loadImageFromFile(std::string filePath){
     newRGBA.height = height;
     newRGBA.data = rgba_data;
     //memorySize += sizeof(newRGBA);
+
+    size_t imageSize = width * height * 4;
+    memStats.totalRamUsage += imageSize;
+    memStats.imageCount++;
+
     imageRBGAs.push_back(newRGBA);
 
 }
@@ -249,6 +267,10 @@ C2D_Image get_C2D_Image(Image::ImageRGBA* rgba) {
     tex->width = clamp(next_pow2(rgba->width), 64, 1024);
     tex->height = clamp(next_pow2(rgba->height), 64, 1024);
   
+    size_t textureSize = tex->width * tex->height * 4;
+    memStats.totalVRamUsage += textureSize;
+    memStats.imageCount++;
+
     // Subtexture
    //std::cout << "Creating C3D_SubTex..." << std::endl;
     Tex3DS_SubTexture *subtex = (Tex3DS_SubTexture *)malloc(sizeof(Tex3DS_SubTexture));
@@ -284,7 +306,7 @@ C2D_Image get_C2D_Image(Image::ImageRGBA* rgba) {
       }
     }
   
-    std::cout << "Image Loaded!" << std::endl;
+    std::cout << "Image Loaded! total VRAM: " << memStats.totalVRamUsage << std::endl;
 
     return image;
   }
@@ -293,6 +315,11 @@ void Image::freeImage(const std::string& costumeId) {
     auto it = imageC2Ds.find(costumeId);
     if (it != imageC2Ds.end()) {
         if (it->second.image.tex) {
+
+            size_t textureSize = it->second.image.tex->width * it->second.image.tex->height * 4;
+            memStats.totalVRamUsage -= textureSize;
+            memStats.c2dImageCount--;
+
             C3D_TexDelete(it->second.image.tex);
             free(it->second.image.tex);
         }
@@ -307,13 +334,27 @@ void Image::freeImage(const std::string& costumeId) {
 void Image::FlushImages(){
     std::vector<std::string> toDelete;
     
+    if(memStats.totalVRamUsage > 24000000){
+      ImageData* imgToDelete = nullptr;
+      std::string toDeleteStr;
+      for(auto& [id, img] : imageC2Ds){
+        if(imgToDelete == nullptr) imgToDelete = &img;
+        
+        if(img.freeTimer < imgToDelete->freeTimer){
+          imgToDelete = &img;
+          toDeleteStr = id;
+        }
+    }
+    toDelete.push_back(toDeleteStr);
+    } else{
     for(auto& [id, img] : imageC2Ds){
-        if(img.freeTimer <= 0 || imageC2Ds.size() > 28){
+        if(img.freeTimer <= 0){
             toDelete.push_back(id);
         } else {
             img.freeTimer -= 1;
         }
     }
+  }
     
     for(const std::string& id : toDelete){
         Image::freeImage(id);

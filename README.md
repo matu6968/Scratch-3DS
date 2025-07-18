@@ -40,7 +40,6 @@ As this is in a very W.I.P state, you will encounter many bugs, crashes, and thi
 - Show/hide variable | Show/hide list
 - When backdrop switches to
 - When this sprite clicked
-- When backdrop switches to
 - When loudness > ___
 - All Color touching blocks
 - Set drag mode
