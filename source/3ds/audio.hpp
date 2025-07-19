@@ -24,6 +24,7 @@ public:
     static bool init();
     static void cleanup();
     static int loadWAV(const void* data, size_t size);
+    static int loadMP3(const void* data, size_t size);
     static void playTrack(int trackId, bool loop = false);
     static void stopTrack(int trackId);
     static void stopAllTracks();

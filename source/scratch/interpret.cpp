@@ -1,4 +1,5 @@
 #include "interpret.hpp"
+#include "render.hpp"
 
 std::vector<Sprite*> sprites;
 std::vector<Sprite> spritePool;
@@ -175,22 +176,22 @@ void loadSprites(const nlohmann::json& json){
 
                 for(const auto& [inputName,inputData] : data["inputs"].items()){
                     ParsedInput parsedInput;
-                    parsedInput.originalJson = inputData;
 
                     int type = inputData[0];
                     auto& inputValue = inputData[1];
 
 
                     if(type == 1){
-                        // Type 1 is a block reference
-                        parsedInput.inputType = ParsedInput::BLOCK;
-                        parsedInput.blockId = inputValue.get<std::string>();
+                        parsedInput.inputType = ParsedInput::LITERAL;
+                        parsedInput.literalValue = Value::fromJson(inputValue);
+
                     } else if(type == 3){
                         if(inputValue.is_array()){
                             parsedInput.inputType = ParsedInput::VARIABLE;
                             parsedInput.variableId = inputValue[2].get<std::string>();
                         } else{
                             parsedInput.inputType = ParsedInput::BLOCK;
+                            if(!inputValue.is_null())
                             parsedInput.blockId = inputValue.get<std::string>();
                         }
                     } else if(type == 2){
@@ -372,27 +373,38 @@ void loadSprites(const nlohmann::json& json){
         }
     }
     // set advanced project settings properties
+    int wdth = 0;
+    int hght = 0;
+    int framerate = 0;
+
     try{
-       int framerate = config["framerate"].get<int>();
+       framerate = config["framerate"].get<int>();
        Scratch::FPS = framerate;
     }
     catch(...){
         //std::cerr << "no framerate property." << std::endl;
     }
         try{
-       int wdth = config["width"].get<int>();
+       wdth = config["width"].get<int>();
        Scratch::projectWidth = wdth;
     }
     catch(...){
         //std::cerr << "no width property." << std::endl;
     }
         try{
-       int hght = config["height"].get<int>();
+       hght = config["height"].get<int>();
        Scratch::projectHeight = hght;
     }
     catch(...){
         //std::cerr << "no height property." << std::endl;
     }
+
+    if(wdth == 400 && hght == 480)
+    Render::renderMode = Render::BOTH_SCREENS;
+    else if(wdth == 320 && hght == 240)
+    Render::renderMode = Render::BOTTOM_SCREEN_ONLY;
+    else
+    Render::renderMode = Render::TOP_SCREEN_ONLY;
     
     // if unzipped, load initial sprites
     if(projectType == UNZIPPED){
@@ -448,22 +460,32 @@ std::vector<Block*> getBlockChain(std::string blockId,std::string* outID){
         blockChain.push_back(currentBlock);
         if(outID)
         *outID += currentBlock->id;
-        if(!currentBlock->parsedInputs["SUBSTACK"].originalJson[1].is_null()){
+
+        auto substackIt = currentBlock->parsedInputs.find("SUBSTACK");
+        if(substackIt != currentBlock->parsedInputs.end() && 
+           (substackIt->second.inputType == ParsedInput::BOOLEAN || substackIt->second.inputType == ParsedInput::BLOCK) &&
+           !substackIt->second.blockId.empty()){
+            
             std::vector<Block*> subBlockChain;
-            subBlockChain = getBlockChain(currentBlock->parsedInputs["SUBSTACK"].originalJson[1],outID);
+            subBlockChain = getBlockChain(substackIt->second.blockId, outID);
             for(auto& block : subBlockChain){
                 blockChain.push_back(block);
                 if(outID)
-                *outID += block->id;
+                    *outID += block->id;
             }
         }
-        if(!currentBlock->parsedInputs["SUBSTACK2"].originalJson[1].is_null()){
+        
+        auto substack2It = currentBlock->parsedInputs.find("SUBSTACK2");
+        if(substack2It != currentBlock->parsedInputs.end() && 
+           (substack2It->second.inputType == ParsedInput::BOOLEAN || substack2It->second.inputType == ParsedInput::BLOCK) &&
+           !substack2It->second.blockId.empty()){
+            
             std::vector<Block*> subBlockChain;
-            subBlockChain = getBlockChain(currentBlock->parsedInputs["SUBSTACK2"].originalJson[1],outID);
+            subBlockChain = getBlockChain(substack2It->second.blockId, outID);
             for(auto& block : subBlockChain){
                 blockChain.push_back(block);
                 if(outID)
-                *outID += block->id;
+                    *outID += block->id;
             }
         }
         currentBlock = findBlock(currentBlock->next);
@@ -620,6 +642,15 @@ Value Scratch::getInputValue(Block& block, const std::string& inputName, Sprite*
         switch(input.inputType) {
 
             case ParsedInput::LITERAL:
+                // Check if literal string value is actually a block ID
+                if (input.literalValue.isString()) {
+                    std::string strValue = input.literalValue.asString();
+                    Block* foundBlock = findBlock(strValue);
+                    if (foundBlock != nullptr) {
+                        // It's a block ID, evaluate the block
+                        return executor.getBlockValue(*foundBlock, sprite);
+                    }
+                }
                 return input.literalValue;
                 
             case ParsedInput::VARIABLE:

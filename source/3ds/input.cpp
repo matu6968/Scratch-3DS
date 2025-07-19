@@ -1,6 +1,7 @@
 #include "input.hpp"
 #include "../scratch/blockExecutor.hpp"
 #include "../scratch/input.hpp"
+#include "../scratch/render.hpp"
 #include <3ds.h>
 
 #define BOTTOM_SCREEN_WIDTH 320
@@ -111,7 +112,10 @@ void Input::getInput(){
         if(kDown & KEY_TOUCH){
             mousePointer.isPressed = true;
             mousePointer.x = touch.px - (BOTTOM_SCREEN_WIDTH / 2);
+            if(Render::renderMode != Render::BOTTOM_SCREEN_ONLY)
             mousePointer.y = (-touch.py + (SCREEN_HEIGHT)) -SCREEN_HEIGHT;
+            else
+            mousePointer.y = (-touch.py + (SCREEN_HEIGHT)) -SCREEN_HEIGHT / 2;
         }
         if (keyHeldFrames == 1 || keyHeldFrames > 30)
         BlockExecutor::runAllBlocksByOpcode(Block::EVENT_WHEN_KEY_PRESSED);

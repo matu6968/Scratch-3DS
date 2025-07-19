@@ -8,7 +8,7 @@
 #define NANOSVGRAST_IMPLEMENTATION
 #include "nanosvgrast.h"
 
-std::vector<Image::ImageRGBA> Image::imageRBGAs;
+std::vector<Image::ImageRGBA> Image::imageRGBAS;
 std::unordered_map<std::string,SDL_Image*> images;
 
 void Image::loadImages(mz_zip_archive *zip){
@@ -246,6 +246,10 @@ SDL_Image::SDL_Image(std::string filePath){
     textureRect.h = height;
     textureRect.x = 0;
     textureRect.y = 0;
+
+}
+
+void Image::queueFreeImage(const std::string& costumeId){
 
 }
 

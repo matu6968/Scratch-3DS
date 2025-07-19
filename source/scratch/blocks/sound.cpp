@@ -6,6 +6,7 @@
 #include <unordered_map>
 #include <fstream>
 #include <cstring>
+#include <algorithm>
 
 // Platform-specific audio includes
 #ifdef __3DS__
@@ -271,10 +272,31 @@ int SoundBlocks::loadSoundFile(Sound* sound) {
     
     std::cout << "Loaded sound file: " << filename << " (" << fileSize << " bytes)" << std::endl;
     
+    // Detect file format based on extension
+    std::string extension = "";
+    size_t lastDot = filename.find_last_of('.');
+    if (lastDot != std::string::npos) {
+        extension = filename.substr(lastDot);
+        std::transform(extension.begin(), extension.end(), extension.begin(), ::tolower);
+    }
+    
     // Load the sound into the audio system
     int trackId = -1;
     
-    trackId = Audio::loadWAV(fileData, fileSize);
+    if (extension == ".wav") {
+        trackId = Audio::loadWAV(fileData, fileSize);
+    } else if (extension == ".mp3") {
+#ifdef __3DS__
+        // Use the MP3 decoder for 3DS
+        trackId = Audio::loadMP3(fileData, fileSize);
+#else
+        // For PC, SDL can handle MP3 files through loadWAV
+        trackId = Audio::loadWAV(fileData, fileSize);
+#endif
+    } else {
+        std::cerr << "Unsupported audio format: " << extension << " for file: " << filename << std::endl;
+        trackId = -1;
+    }
     
     // Free the file data (audio system should have copied it)
     // Only free if it was loaded from filesystem, not from cache
@@ -314,10 +336,12 @@ void SoundBlocks::loadSounds(void *zip_ptr) {
 
         std::string zipFileName = file_stat.m_filename;
 
-        // Check if file is a WAV file
+        // Check if file is a WAV or MP3 file
         if (zipFileName.size() >= 4 && 
             (zipFileName.substr(zipFileName.size() - 4) == ".wav" || 
-             zipFileName.substr(zipFileName.size() - 4) == ".WAV")) {
+             zipFileName.substr(zipFileName.size() - 4) == ".WAV" ||
+             zipFileName.substr(zipFileName.size() - 4) == ".mp3" ||
+             zipFileName.substr(zipFileName.size() - 4) == ".MP3")) {
 
             size_t file_size;
             void* file_data = mz_zip_reader_extract_to_heap(zip, i, &file_size, 0);

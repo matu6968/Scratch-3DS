@@ -14,12 +14,13 @@ To use the mouse you must enter mouse mode by holding L. use the D-pad to move t
 
 ## Features
 
-- **Sound Support**: WAV audio playback with volume control and sound effects
+- **Sound Support**: WAV/MP3 audio playback with volume control and sound effects
 - **Sprite Rendering**: Support for PNG, JPG, and SVG images with automatic vector-to-bitmap conversion
 - **Input Handling**: Keyboard, mouse, and touch input
 - **Control Blocks**: Loops, conditionals, and event handling
 - **Variables and Lists**: Data storage and manipulation
 - **Custom Blocks**: User-defined procedures and functions
+- **Say and Think Blocks**: 3DS one is WIP as there are bugs to polish out
 
 ## Limitations
 
@@ -34,7 +35,6 @@ As this is in a very W.I.P state, you will encounter many bugs, crashes, and thi
 
 
 ## Unimplimented blocks
-- All say and think blocks
 - All Costume Effects
 - Cloud variables
 - Show/hide variable | Show/hide list
@@ -81,7 +81,7 @@ make
 Download the 3dsx file from the Releases tab.
 
 Place the 3dsx file in the `3ds/` folder of your 3DS SD card, along with the Scratch project you want to run.
-- The Scratch project MUST be named `project.sb3` , all lowercase.
+- For Beta 4 and below: The Scratch project MUST be named `project.sb3` , all lowercase.
 
 Then it should be as simple as opening the homebrew launcher on your 3DS and running the app.
 

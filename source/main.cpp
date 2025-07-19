@@ -35,8 +35,41 @@ int main(int argc, char **argv)
 	std::chrono::_V2::system_clock::time_point frameEndTime = std::chrono::high_resolution_clock::now();
 
 	if(!Unzip::load()){
+
+		if(Unzip::projectOpened == -3){ // main menu
+
+			MainMenu menu;
+			bool isLoaded = false;
+			while (Render::appShouldRun() && !isLoaded){
+
+				menu.render();
+				if(!menu.hasProjects && menu.shouldExit){
+					exitApp();
+					return 0;
+				}
+
+				if(Unzip::filePath != ""){
+					menu.cleanup();
+					if(!Unzip::load()){
+						exitApp();
+						return 0;
+					}
+					isLoaded = true;
+				}
+
+			}
+			if(!Render::appShouldRun()){
+				menu.cleanup();
+				exitApp();
+				return 0;
+			}
+
+		}
+		else{
+
 		exitApp();
 		return 0;
+		}
 	}
 
 	BlockExecutor::timer = std::chrono::high_resolution_clock::now();

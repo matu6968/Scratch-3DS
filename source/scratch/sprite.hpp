@@ -26,7 +26,6 @@ struct ParsedInput{
     Value literalValue;
     std::string variableId;
     std::string blockId;
-    nlohmann::json originalJson;
 
     ParsedInput() : inputType(LITERAL), literalValue(Value(0)) {}
 
@@ -81,6 +80,9 @@ struct Block {
         LOOKS_SETSIZETO,
         LOOKS_GO_FORWARD_BACKWARD_LAYERS,
         LOOKS_GO_TO_FRONT_BACK,
+        LOOKS_SET_EFFECT_TO,
+        LOOKS_CHANGE_EFFECT_BY,
+        LOOKS_CLEAR_GRAPHIC_EFFECTS,
         SOUND_VOLUME,
         SOUND_PLAYUNTILDONE,
         SOUND_SOUNDS_MENU,
@@ -144,6 +146,7 @@ struct Block {
         SENSING_ASK_AND_WAIT,
         SENSING_ANSWER,
         SENSING_USERNAME,
+        SENSING_SET_DRAG_MODE,
         OPERATOR_EQUALS,
         OPERATOR_GT,
         OPERATOR_LT,
@@ -204,6 +207,9 @@ struct Block {
         if(opCodeString == "looks_setsizeto")return LOOKS_SETSIZETO;
         if(opCodeString == "looks_goforwardbackwardlayers")return LOOKS_GO_FORWARD_BACKWARD_LAYERS;
         if(opCodeString == "looks_gotofrontback")return LOOKS_GO_TO_FRONT_BACK;
+        if(opCodeString == "looks_seteffectto") return LOOKS_SET_EFFECT_TO;
+        if(opCodeString == "looks_changeeffectby") return LOOKS_CHANGE_EFFECT_BY;
+        if(opCodeString == "looks_cleargraphiceffects") return LOOKS_CLEAR_GRAPHIC_EFFECTS;
         if(opCodeString == "sound_volume")return SOUND_VOLUME;
         if(opCodeString == "sound_playuntildone")return SOUND_PLAYUNTILDONE;
         if(opCodeString == "sound_sounds_menu")return SOUND_SOUNDS_MENU;
@@ -267,6 +273,7 @@ struct Block {
         if(opCodeString == "sensing_askandwait") return SENSING_ASK_AND_WAIT;
         if(opCodeString == "sensing_answer") return SENSING_ANSWER;
         if(opCodeString == "sensing_username") return SENSING_USERNAME;
+        if(opCodeString == "sensing_setdragmode") return SENSING_SET_DRAG_MODE;
         if(opCodeString == "operator_equals")return OPERATOR_EQUALS;
         if(opCodeString == "operator_gt")return OPERATOR_GT;
         if(opCodeString == "operator_lt")return OPERATOR_LT;
@@ -398,8 +405,11 @@ class Sprite {
         int rotationCenterX;
         int rotationCenterY;
         int size;
-        int rotation;
+        double rotation;
         int layer;
+
+        int ghostEffect;
+        double colorEffect = -99999;
 
         enum RotationStyle{
             NONE,

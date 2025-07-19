@@ -10,6 +10,6 @@ struct ImageData{
     u16 freeTimer = 120;
 };
 
-C2D_Image get_C2D_Image(Image::ImageRGBA* rgba);
+C2D_Image get_C2D_Image(Image::ImageRGBA rgba);
 
 extern std::unordered_map<std::string, ImageData> imageC2Ds;

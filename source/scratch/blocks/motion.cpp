@@ -53,7 +53,7 @@ BlockResult MotionBlocks::goToXY(Block& block, Sprite* sprite, Block** waitingBl
 BlockResult MotionBlocks::turnLeft(Block& block, Sprite* sprite, Block** waitingBlock, bool* withoutScreenRefresh){
     Value value = Scratch::getInputValue(block,"DEGREES",sprite);
     if (value.isNumeric()) {
-        sprite->rotation -= value.asInt();
+        sprite->rotation -= value.asDouble();
     }
     return BlockResult::CONTINUE;
 }
@@ -61,7 +61,7 @@ BlockResult MotionBlocks::turnLeft(Block& block, Sprite* sprite, Block** waiting
 BlockResult MotionBlocks::turnRight(Block& block, Sprite* sprite, Block** waitingBlock, bool* withoutScreenRefresh){
     Value value = Scratch::getInputValue(block,"DEGREES",sprite);
     if (value.isNumeric()) {
-        sprite->rotation += value.asInt();
+        sprite->rotation += value.asDouble();
     }
     return BlockResult::CONTINUE;
 }
@@ -69,7 +69,7 @@ BlockResult MotionBlocks::turnRight(Block& block, Sprite* sprite, Block** waitin
 BlockResult MotionBlocks::pointInDirection(Block& block, Sprite* sprite, Block** waitingBlock, bool* withoutScreenRefresh){
     Value value = Scratch::getInputValue(block,"DIRECTION", sprite);
     if (value.isNumeric()) {
-        sprite->rotation = value.asInt();
+        sprite->rotation = value.asDouble();
     }
     return BlockResult::CONTINUE;
 }

@@ -1,4 +1,5 @@
 #include "audio.hpp"
+#include "mp3.hpp"
 #include <3ds.h>
 #include <3ds/ndsp/ndsp.h>
 #include <3ds/ndsp/channel.h>
@@ -171,6 +172,93 @@ int Audio::loadWAV(const void* data, size_t size) {
     int trackId = audioTracks.size() - 1;
     
     std::cout << "WAV loaded successfully as track " << trackId << std::endl;
+    return trackId;
+}
+
+int Audio::loadMP3(const void* data, size_t size) {
+    if (!audioInitialized) {
+        std::cerr << "Audio not initialized" << std::endl;
+        return -1;
+    }
+    
+    std::cout << "Loading MP3 file (" << size << " bytes)..." << std::endl;
+    
+    // Initialize MP3 decoder
+    if (!MP3::init(data, size)) {
+        std::cerr << "Failed to initialize MP3 decoder" << std::endl;
+        return -1;
+    }
+    
+    // Get MP3 properties
+    uint32_t sampleRate = MP3::getSampleRate();
+    uint8_t numChannels = MP3::getChannels();
+    uint16_t bitsPerSample = MP3::getBitsPerSample();
+    size_t bufferSize = MP3::getBufferSize();
+    
+    std::cout << "MP3 format: " << sampleRate << "Hz, " << (int)numChannels << " channels, " << bitsPerSample << " bits" << std::endl;
+    
+    if (bitsPerSample != 16) {
+        std::cerr << "Unsupported bit depth: " << bitsPerSample << " (only 16-bit supported)" << std::endl;
+        MP3::cleanup();
+        return -1;
+    }
+    
+    if (numChannels < 1 || numChannels > 2) {
+        std::cerr << "Unsupported channel count: " << numChannels << std::endl;
+        MP3::cleanup();
+        return -1;
+    }
+    
+    // Allocate audio buffers
+    void* buffer1 = linearAlloc(bufferSize);
+    void* buffer2 = linearAlloc(bufferSize);
+    
+    if (!buffer1 || !buffer2) {
+        std::cerr << "Failed to allocate audio buffers (" << bufferSize << " bytes each)" << std::endl;
+        if (buffer1) linearFree(buffer1);
+        if (buffer2) linearFree(buffer2);
+        MP3::cleanup();
+        return -1;
+    }
+    
+    // Decode the first chunk of audio data
+    size_t decodedSize = MP3::decode(buffer1, bufferSize);
+    if (decodedSize == 0) {
+        std::cerr << "Failed to decode MP3 data" << std::endl;
+        linearFree(buffer1);
+        linearFree(buffer2);
+        MP3::cleanup();
+        return -1;
+    }
+    
+    // Calculate samples per channel
+    size_t totalSamples = decodedSize / sizeof(int16_t);
+    size_t samplesPerChannel = totalSamples / numChannels;
+    
+    std::cout << "Decoded " << decodedSize << " bytes, " << totalSamples << " samples, " << samplesPerChannel << " samples per channel" << std::endl;
+    
+    // Create audio track
+    AudioTrack track;
+    track.buffer = buffer1;
+    track.buffer2 = buffer2;
+    track.audioData = (const char*)buffer1;
+    track.size = decodedSize;
+    track.bufferSize = bufferSize;
+    track.isPlaying = false;
+    track.channel = AUDIO_CHANNEL;
+    track.numChannels = numChannels;
+    track.sampleRate = sampleRate;
+    track.bitsPerSample = bitsPerSample;
+    track.currentPos = 0;
+    track.samplesPerChannel = samplesPerChannel;
+    
+    audioTracks.push_back(track);
+    int trackId = audioTracks.size() - 1;
+    
+    // Clean up MP3 decoder
+    MP3::cleanup();
+    
+    std::cout << "MP3 loaded successfully as track " << trackId << std::endl;
     return trackId;
 }
 
